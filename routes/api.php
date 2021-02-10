@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::group(['prefix' => 'v1',
 ], function () {
-    Route::group(['middleware' => 'api'], function () {
-        Route::post('send-emails', 'API\V1\SendingMailsController');
+    Route::group(['middleware' => ['api', 'token.validation']], function () {
+        Route::post('send-emails', 'API\V1\SendingMailsController')->name('send.mails');
     });
 });
