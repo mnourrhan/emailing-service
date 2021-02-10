@@ -146,6 +146,13 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'emails.*.body' => 'body',
+        'emails.*.subject' => 'subject',
+        'emails.*.receiver_email' => 'receiver email',
+        'emails.*.attachments' => 'attachments',
+        'emails.*.attachments.*.name' => 'attachment name',
+        'emails.*.attachments.*.value' => 'attachment value',
+    ],
 
 ];
