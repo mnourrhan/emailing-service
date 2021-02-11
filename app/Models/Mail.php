@@ -27,4 +27,7 @@ class Mail extends Model
         'body', 'subject', 'receiver_email'
     ];
 
+    public function attachments() {
+        return $this->hasMany(MailAttachment::class, 'email_id', 'id');
+    }
 }

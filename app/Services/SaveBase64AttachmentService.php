@@ -37,7 +37,7 @@ class SaveBase64AttachmentService
     public function execute($attachment, $email_id){
         $binaryData = base64_decode($attachment['value']);
         $extension = $this->getFileExtension($binaryData);
-        $filePath = '/public/' .  $attachment['name']. '.' . $extension;
+        $filePath = '/public/' .  md5($attachment['name'] . microtime()). '.' . $extension;
         Storage::put($filePath , $binaryData);
         $this->attachmentsRepository->create([
             'name' => $attachment['name'],

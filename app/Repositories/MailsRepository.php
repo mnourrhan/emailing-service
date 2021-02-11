@@ -24,4 +24,13 @@ class MailsRepository extends BaseRepository
     {
         parent::__construct($model);
     }
+
+    /**
+     * get data paginated
+     * @param $page_size
+     * @return mixed
+     */
+    public function paginate($page_size) {
+        return $this->model->paginate($page_size);
+    }
 }
