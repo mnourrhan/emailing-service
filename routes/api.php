@@ -17,5 +17,8 @@ Route::group(['prefix' => 'v1',
 ], function () {
     Route::group(['middleware' => ['api', 'token.validation']], function () {
         Route::post('send-emails', 'API\V1\SendingMailsController')->name('send.mails');
+        Route::get('emails', 'API\V1\MailController@index')->name('mails.index');
     });
+    Route::get('download/{id}/attachment', 'API\V1\DownloadingAttachmentController')
+        ->middleware('auth.download.attachment')->name('attachment.download');
 });
