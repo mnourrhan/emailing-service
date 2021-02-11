@@ -1,61 +1,144 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# emailing-service API
+[emailing-service](https://github.com/mnourrhan/emailing-service) API - Sending multiple emails with attachments through API
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/d/total.svg" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
-</p>
+## Installation
+- Clone the repo
+- Run "php artisan config:clear"
+- Change the .env file DB_HOST with your local host and your DB configuration.
+- Change QUEUE_CONNECTION into .env file to "redis"
+- Add API_TOKEN to .env file for securing API
+- Add ENCRYPTION_KEY to .env file for securing download attachments API
+- Run "php artisan config:clear"
+- Run "php artisan migrate"
+- You can run "vendor/bin/phpunit" for testing the APIs
 
-## About Laravel
+## Media Types
+This API uses the JSON format, given limited client support `Content-Type` and `Accept` should still be set to `application/json`.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Requests with a message-body are using plain JSON to set or update resource states.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Error States
+status with fail value will be returned when error occur
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Specially, this API uses:
 
-## Learning Laravel
+- 200: "Successful", often return from a GET/POST request
+- 422: "Failed", invalid request often return from a GET/POST request
+- 500: "Failed", server error often return from a GET/POST request
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Send Emails [/api/v1/send-emails]
+sending multiple emails.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+The request body resource has the following attributes:
+- body => string, max 500
+- subject => string, max 100
+- receiver_email => email, max 100
+- attachments => array {value => base64 file, name => filename}
 
-## Laravel Sponsors
++ Request (application/json)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+    + Headers
 
-### Premium Partners
+            Accept: application/json
+    + Body
+    
+            [
+                {
+                    "body": "testing", 
+                    "subject": "test",
+                    "receiver_email": "test@test.com",
+                     "attachments": 
+                     [
+                        {
+                            "value": base64 file,
+                            "name": "document"
+                        },...
+                     ]
+                },...
+            ]
+    + Params
+    
+            api_token: "your api token from .env file"
+            
++ Response 200
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[OP.GG](https://op.gg)**
+        {
+            "message": "Emails are sent successfully",
+            "data": {
+            }
+        }
 
-## Contributing
++ Response 422  
+  
+      {
+          "message": "The given data was invalid.",
+          "errors": {
+              "body": [
+                "The body field is required."
+              ],...
+          }
+      }
++ Response 500
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+      {
+          "message": "Server error occurred. Please try again later!",
+          "errors": {
+          }
+      }
+      
+## Retrieve all emails [/api/v1/emails]
 
-## Code of Conduct
++ Request (application/json)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+    + Headers
 
-## Security Vulnerabilities
+            Accept: application/json
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+    + Body
 
-## License
+            {
+            }
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+    + Params
+        
+            api_token: "your api token from .env file"
+            page: 1
+                
++ Response 200
+
+        {
+            "data": [
+                {
+                   id: ...
+                   body: ...
+                   subject: ...
+                   attachments: [
+                        {
+                            link: ...
+                        },...
+                   ]
+                }, ...
+            ],
+            "links": {
+                ...
+            },
+            "meta": {
+               ...
+            }
+        }
+
++ Response 422
+
+      {
+          "message": "API token is invalid!",
+          "errors": {
+          }
+      }
+
++ Response 500
+
+      {
+          "message": "Server error occurred. Please try again later!",
+          "errors": {
+          }
+      }
