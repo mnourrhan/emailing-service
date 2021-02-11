@@ -7,8 +7,6 @@
 namespace App\Services;
 
 use App\Jobs\SendEmail;
-use App\Repositories\MailAttachmentsRepository;
-use App\Repositories\MailsRepository;
 
 /**
  * Description of SendingMailsService
@@ -18,57 +16,15 @@ use App\Repositories\MailsRepository;
 class SendingMailsService
 {
     /**
-     * @var MailsRepository
-     */
-    protected $repository;
-
-    /**
-     * @var MailAttachmentsRepository
-     */
-    protected $attachmentsRepository;
-
-    /**
-     * SendingMailsService constructor.
-     * @param MailsRepository $repository
-     * @param MailAttachmentsRepository $attachmentsRepository
-     */
-    public function __construct(MailsRepository $repository,
-                                MailAttachmentsRepository $attachmentsRepository) {
-        $this->repository = $repository;
-        $this->attachmentsRepository = $attachmentsRepository;
-    }
-
-    /**
-     * @param $request
+     * @param $emails
      * @return \Illuminate\Http\JsonResponse
      */
     public function execute($request)
     {
         $emails = $request->get('emails');
         foreach ($emails as $email){
-            $created_email = $this->createMail($email);
-            $attachments = [];
-            if(isset($email['attachments'])) {
-                foreach ($email['attachments'] as $attachment) {
-                    $attachment_path = app(SaveBase64AttachmentService::class)
-                        ->execute($attachment, $created_email['id']);
-                    array_push($attachments, $attachment_path);
-                }
-            }
-            SendEmail::dispatch($created_email, $attachments);
+            SendEmail::dispatch($email);
         }
         return successResponse(__('Emails are sent successfully'));
-    }
-
-    /**
-     * @param $email
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    private function createMail($email){
-        return $this->repository->create([
-            'body' => $email['body'],
-            'subject' => $email['subject'],
-            'receiver_email' => $email['receiver_email'],
-        ]);
     }
 }
