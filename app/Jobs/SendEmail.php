@@ -3,7 +3,10 @@
 namespace App\Jobs;
 
 use App\Mail\MailService;
+use App\Services\CreatingMailsService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Mail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -15,7 +18,7 @@ class SendEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $details;
+    protected $emailData;
 
     protected $attachments;
 
@@ -24,10 +27,9 @@ class SendEmail implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($details, $attachments)
+    public function __construct($emailData)
     {
-        $this->details = $details;
-        $this->attachments = $attachments;
+        $this->emailData = $emailData;
     }
 
     /**
@@ -37,13 +39,22 @@ class SendEmail implements ShouldQueue
      */
     public function handle()
     {
-        // Allow only 2 emails every 1 second
-        Redis::throttle('mail-service')->allow(2)->every(1)->then(function () {
-            $email = new MailService($this->details, $this->attachments);
-            Mail::to($this->details['receiver_email'])->send($email);
-        }, function () {
-            // Could not obtain lock; this job will be re-queued
-            $this->release(2);
-        });
+        DB::beginTransaction();
+        try {
+            $this->attachments = app(CreatingMailsService::class)->execute($this->emailData);
+            // Allow only 2 emails every 1 second
+            Redis::throttle('mail-service')->allow(2)->every(1)->then(function (){
+                $email = new MailService($this->emailData, $this->attachments);
+                Mail::to($this->emailData['receiver_email'])->send($email);
+                DB::commit();
+            }, function () {
+                // Could not obtain lock; this job will be re-queued
+                DB::rollBack();
+                $this->release(2);
+            });
+        }catch(\Exception $e){
+            Log::info($e);
+            DB::rollBack();
+        }
     }
 }
